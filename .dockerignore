@@ -1,0 +1,21 @@
+# Git
+.git
+.gitignore
+
+# Air temp/build outputs
+tmp
+air.log
+
+# Go artifacts
+bin
+*.out
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Env/config
+.env
+*.local
+
+

@@ -1,0 +1,23 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/app ./cmd/api/local"
+bin = "tmp/app"
+full_bin = "./tmp/app"
+delay = 1000
+exclude_dir = ["tmp", "vendor", "build", "db/migrations", "tests", ".git"]
+include_ext = ["go", "mod", "sum", "env", "toml"]
+kill_delay = 500
+log = "air.log"
+send_interrupt = true
+stop_on_error = true
+
+[color]
+app = "cyan"
+build = "yellow"
+main = "magenta"
+runner = "green"
+watcher = "blue"
+
+
