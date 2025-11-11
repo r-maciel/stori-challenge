@@ -24,6 +24,6 @@ Requisitos:
 Pasos:
 1) Instala la extensión “Dev Containers” en VS Code.
 2) Abre este repositorio en VS Code.
-3) Opción A: Click en la esquina inferior izquierda (><) y selecciona “Open Folder in Container…”.  
-   Opción B: Abre la barra de comandos (macOS: Cmd+Shift+P, Windows/Linux: Ctrl+Shift+P) y ejecuta “Dev Containers: Open Folder in Container…”.
+3) Opción A: Click en la esquina inferior izquierda (><) y selecciona “Rebuild Container...”.  
+   Opción B: Abre la barra de comandos (macOS: Cmd+Shift+P, Windows/Linux: Ctrl+Shift+P) y ejecuta “Dev Containers: Rebuild Container...”.
 
