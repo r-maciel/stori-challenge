@@ -11,6 +11,8 @@ import (
 	"stori-challenge/internal/domain"
 	"stori-challenge/internal/ports/repositories"
 	"stori-challenge/internal/shared"
+
+	"github.com/shopspring/decimal"
 )
 
 type fakeRepo struct {
@@ -34,6 +36,16 @@ func (f *fakeRepo) ExistsByIDs(ctx context.Context, ids []int64) (map[int64]bool
 func (f *fakeRepo) BulkInsert(ctx context.Context, txs []domain.Transaction) error {
 	f.captured = append(f.captured, txs...)
 	return f.bulkErr
+}
+
+// Satisfy new interface methods; not used by csvmigration tests.
+func (f *fakeRepo) UserHasAnyTransaction(ctx context.Context, userID int64) (bool, error) {
+	// Consider user has transactions if exists map is non-empty for realism in tests using this fake.
+	return len(f.exists) > 0, nil
+}
+
+func (f *fakeRepo) GetUserBalanceSummary(ctx context.Context, userID int64, from, to time.Time) (balance decimal.Decimal, totalDebits decimal.Decimal, totalCredits decimal.Decimal, err error) {
+	return decimal.Zero, decimal.Zero, decimal.Zero, nil
 }
 
 func newSvcWithRepo(t *testing.T, repo repositories.TransactionRepository, now time.Time) *csvMigrationService {

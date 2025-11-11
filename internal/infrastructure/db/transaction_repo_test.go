@@ -199,3 +199,98 @@ type testError string
 func (e testError) Error() string { return string(e) }
 
 const assertErr = testError("assert-err")
+
+func TestUserHasAnyTransaction_FalseWhenNoRows(t *testing.T) {
+	sqlDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer sqlDB.Close()
+	repo := NewTransactionRepo(sqlDB)
+
+	userID := int64(777)
+	queryRe := regexp.MustCompile(`SELECT 1 FROM transactions WHERE user_id = \$1 LIMIT 1`)
+	mock.ExpectQuery(queryRe.String()).WithArgs(userID).WillReturnRows(sqlmock.NewRows([]string{"one"}))
+
+	got, err := repo.UserHasAnyTransaction(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got {
+		t.Fatalf("expected false, got true")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
+func TestUserHasAnyTransaction_TrueWhenRowExists(t *testing.T) {
+	sqlDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer sqlDB.Close()
+	repo := NewTransactionRepo(sqlDB)
+
+	userID := int64(888)
+	queryRe := regexp.MustCompile(`SELECT 1 FROM transactions WHERE user_id = \$1 LIMIT 1`)
+	mock.ExpectQuery(queryRe.String()).WithArgs(userID).WillReturnRows(sqlmock.NewRows([]string{"one"}).AddRow(1))
+
+	got, err := repo.UserHasAnyTransaction(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !got {
+		t.Fatalf("expected true, got false")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
+func TestGetUserBalanceSummary_Success(t *testing.T) {
+	sqlDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer sqlDB.Close()
+	repo := NewTransactionRepo(sqlDB)
+
+	userID := int64(123)
+	from := time.Unix(0, 0).UTC()
+	to := time.Unix(1000, 0).UTC()
+	stmtRe := regexp.MustCompile(`SELECT\s+COALESCE\(SUM\(amount\), 0\)::text AS balance,\s+COALESCE\(SUM\(CASE WHEN type = 'debit' THEN -amount ELSE 0 END\), 0\)::text AS total_debits,\s+COALESCE\(SUM\(CASE WHEN type = 'credit' THEN amount ELSE 0 END\), 0\)::text AS total_credits\s+FROM transactions\s+WHERE user_id = \$1 AND datetime BETWEEN \$2 AND \$3`)
+	rows := sqlmock.NewRows([]string{"balance", "total_debits", "total_credits"}).AddRow("5.21", "10.00", "15.21")
+	mock.ExpectQuery(stmtRe.String()).WithArgs(userID, from, to).WillReturnRows(rows)
+
+	bal, deb, cred, err := repo.GetUserBalanceSummary(context.Background(), userID, from, to)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if bal.StringFixed(2) != "5.21" || deb.StringFixed(2) != "10.00" || cred.StringFixed(2) != "15.21" {
+		t.Fatalf("unexpected values: %s %s %s", bal.StringFixed(2), deb.StringFixed(2), cred.StringFixed(2))
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet expectations: %v", err)
+	}
+}
+
+func TestGetUserBalanceSummary_QueryError_Propagates(t *testing.T) {
+	sqlDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to create sqlmock: %v", err)
+	}
+	defer sqlDB.Close()
+	repo := NewTransactionRepo(sqlDB)
+
+	userID := int64(123)
+	from := time.Unix(0, 0).UTC()
+	to := time.Unix(1000, 0).UTC()
+	stmtRe := regexp.MustCompile(`SELECT\s+COALESCE\(SUM\(amount\), 0\)::text AS balance,\s+COALESCE\(SUM\(CASE WHEN type = 'debit' THEN -amount ELSE 0 END\), 0\)::text AS total_debits,\s+COALESCE\(SUM\(CASE WHEN type = 'credit' THEN amount ELSE 0 END\), 0\)::text AS total_credits\s+FROM transactions\s+WHERE user_id = \$1 AND datetime BETWEEN \$2 AND \$3`)
+	mock.ExpectQuery(stmtRe.String()).WithArgs(userID, from, to).WillReturnError(assertErr)
+
+	_, _, _, err = repo.GetUserBalanceSummary(context.Background(), userID, from, to)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+}

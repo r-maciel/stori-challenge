@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/shopspring/decimal"
 	"stori-challenge/internal/domain"
 	"stori-challenge/internal/ports/repositories"
 )
@@ -97,4 +99,44 @@ func insertBatch(ctx context.Context, tx *sql.Tx, txs []domain.Transaction) erro
 	stmt := sb.String()
 	_, err := tx.ExecContext(ctx, stmt, args...)
 	return err
+}
+
+func (r *TransactionRepo) UserHasAnyTransaction(ctx context.Context, userID int64) (bool, error) {
+	row := r.DB.QueryRowContext(ctx, `SELECT 1 FROM transactions WHERE user_id = $1 LIMIT 1`, userID)
+	var one int
+	if err := row.Scan(&one); err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *TransactionRepo) GetUserBalanceSummary(ctx context.Context, userID int64, from, to time.Time) (balance decimal.Decimal, totalDebits decimal.Decimal, totalCredits decimal.Decimal, err error) {
+	// Use COALESCE to avoid NULLs; scan as strings to ensure precision with decimal.
+	const q = `
+SELECT
+	COALESCE(SUM(amount), 0)::text AS balance,
+	COALESCE(SUM(CASE WHEN type = 'debit' THEN -amount ELSE 0 END), 0)::text AS total_debits,
+	COALESCE(SUM(CASE WHEN type = 'credit' THEN amount ELSE 0 END), 0)::text AS total_credits
+FROM transactions
+WHERE user_id = $1 AND datetime BETWEEN $2 AND $3`
+	var balStr, debStr, credStr string
+	if err = r.DB.QueryRowContext(ctx, q, userID, from.UTC(), to.UTC()).Scan(&balStr, &debStr, &credStr); err != nil {
+		return decimal.Zero, decimal.Zero, decimal.Zero, err
+	}
+	balance, err = decimal.NewFromString(balStr)
+	if err != nil {
+		return decimal.Zero, decimal.Zero, decimal.Zero, err
+	}
+	totalDebits, err = decimal.NewFromString(debStr)
+	if err != nil {
+		return decimal.Zero, decimal.Zero, decimal.Zero, err
+	}
+	totalCredits, err = decimal.NewFromString(credStr)
+	if err != nil {
+		return decimal.Zero, decimal.Zero, decimal.Zero, err
+	}
+	return balance, totalDebits, totalCredits, nil
 }

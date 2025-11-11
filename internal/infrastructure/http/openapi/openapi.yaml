@@ -67,6 +67,69 @@ paths:
                         field: id
                         value: "tx-123"
                         message: duplicate transaction id
+  /users/{user_id}/balance:
+    get:
+      summary: Get user balance summary within an optional time range
+      description: "Returns balance, total_debits and total_credits for a user. Query params must be RFC3339 with Z."
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+          description: User ID
+        - in: query
+          name: from
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: "Lower bound (RFC3339 with Z). If only one bound is provided, this is used as lower bound and now is used as upper bound."
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: "Upper bound (RFC3339 with Z). If both are provided, bounds are ordered automatically."
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+              examples:
+                ok:
+                  value:
+                    balance: 25.21
+                    total_debits: 10
+                    total_credits: 15
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidDate:
+                  value:
+                    code: invalid_datetime
+                    message: datetime must be RFC3339 with Z
+                    errors: []
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    code: user_transactions_not_found
+                    message: user has no transactions
 components:
   schemas:
     SuccessResponse:
@@ -108,5 +171,21 @@ components:
         - code
         - message
         - errors
+    BalanceResponse:
+      type: object
+      properties:
+        balance:
+          type: number
+          format: double
+        total_debits:
+          type: number
+          format: double
+        total_credits:
+          type: number
+          format: double
+      required:
+        - balance
+        - total_debits
+        - total_credits
 
 

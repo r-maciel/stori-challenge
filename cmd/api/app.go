@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	balanceapp "stori-challenge/internal/application/balance"
 	csvmigration "stori-challenge/internal/application/csvmigration"
 	infradb "stori-challenge/internal/infrastructure/db"
 	"stori-challenge/internal/infrastructure/http/handlers"
@@ -40,8 +41,11 @@ func NewServerWithDB(sqlDB *sql.DB) *gin.Engine {
 	transactionRepo := infradb.NewTransactionRepo(sqlDB)
 	migrationService := csvmigration.NewCsvMigrationService(transactionRepo)
 	migrateHandler := handlers.NewMigrateHandler(migrationService)
+	balanceService := balanceapp.NewBalanceService(transactionRepo)
+	balanceHandler := handlers.NewBalanceHandler(balanceService)
 	// Routes (v1)
 	v1.POST("/migrate", migrateHandler.PostMigrate)
+	v1.GET("/users/:user_id/balance", balanceHandler.GetBalance)
 
 	// OpenAPI (3.1) documentation endpoints
 	oas.RegisterOpenAPIRoutes(v1)
