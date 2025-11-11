@@ -98,21 +98,23 @@ func TestBulkInsert_TwoRows_Success(t *testing.T) {
 		UserID:   100,
 		Amount:   decimal.NewFromFloat(12.34),
 		DateTime: time.Date(2023, 10, 1, 15, 4, 5, 0, time.UTC),
+		Type:     domain.TransactionTypeCredit,
 	}
 	t2 := domain.Transaction{
 		ID:       2,
 		UserID:   200,
 		Amount:   decimal.NewFromFloat(56.78),
 		DateTime: time.Date(2023, 10, 2, 11, 0, 0, 0, time.UTC),
+		Type:     domain.TransactionTypeCredit,
 	}
 
 	mock.ExpectBegin()
 	// Match the INSERT statement shape; placeholders grow with rows.
-	stmtRe := regexp.MustCompile(`INSERT INTO transactions \(id, user_id, amount, datetime\) VALUES \(\$1,\$2,\$3,\$4\),\(\$5,\$6,\$7,\$8\)`)
+	stmtRe := regexp.MustCompile(`INSERT INTO transactions \(id, user_id, amount, datetime, type\) VALUES \(\$1,\$2,\$3,\$4,\$5\),\(\$6,\$7,\$8,\$9,\$10\)`)
 	mock.ExpectExec(stmtRe.String()).
 		WithArgs(
-			int64(1), int64(100), "12.34", t1.DateTime.UTC(),
-			int64(2), int64(200), "56.78", t2.DateTime.UTC(),
+			int64(1), int64(100), "12.34", t1.DateTime.UTC(), "credit",
+			int64(2), int64(200), "56.78", t2.DateTime.UTC(), "credit",
 		).WillReturnResult(sqlmock.NewResult(0, 2))
 	mock.ExpectCommit()
 
@@ -147,12 +149,12 @@ func TestBulkInsert_ExecError_PropagatesAndRollbacks(t *testing.T) {
 	defer sqlDB.Close()
 	repo := NewTransactionRepo(sqlDB)
 
-	t1 := domain.Transaction{ID: 1, UserID: 100, Amount: decimal.NewFromInt(1), DateTime: time.Unix(0, 0).UTC()}
+	t1 := domain.Transaction{ID: 1, UserID: 100, Amount: decimal.NewFromInt(1), DateTime: time.Unix(0, 0).UTC(), Type: domain.TransactionTypeCredit}
 
 	mock.ExpectBegin()
-	stmtRe := regexp.MustCompile(`INSERT INTO transactions \(id, user_id, amount, datetime\) VALUES \(\$1,\$2,\$3,\$4\)`)
+	stmtRe := regexp.MustCompile(`INSERT INTO transactions \(id, user_id, amount, datetime, type\) VALUES \(\$1,\$2,\$3,\$4,\$5\)`)
 	mock.ExpectExec(stmtRe.String()).
-		WithArgs(int64(1), int64(100), "1.00", t1.DateTime.UTC()).
+		WithArgs(int64(1), int64(100), "1.00", t1.DateTime.UTC(), "credit").
 		WillReturnError(assertErr)
 	mock.ExpectRollback()
 
@@ -173,12 +175,12 @@ func TestBulkInsert_CommitError_Propagates(t *testing.T) {
 	defer sqlDB.Close()
 	repo := NewTransactionRepo(sqlDB)
 
-	t1 := domain.Transaction{ID: 1, UserID: 100, Amount: decimal.NewFromInt(1), DateTime: time.Unix(0, 0).UTC()}
+	t1 := domain.Transaction{ID: 1, UserID: 100, Amount: decimal.NewFromInt(1), DateTime: time.Unix(0, 0).UTC(), Type: domain.TransactionTypeCredit}
 
 	mock.ExpectBegin()
-	stmtRe := regexp.MustCompile(`INSERT INTO transactions \(id, user_id, amount, datetime\) VALUES \(\$1,\$2,\$3,\$4\)`)
+	stmtRe := regexp.MustCompile(`INSERT INTO transactions \(id, user_id, amount, datetime, type\) VALUES \(\$1,\$2,\$3,\$4,\$5\)`)
 	mock.ExpectExec(stmtRe.String()).
-		WithArgs(int64(1), int64(100), "1.00", t1.DateTime.UTC()).
+		WithArgs(int64(1), int64(100), "1.00", t1.DateTime.UTC(), "credit").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit().WillReturnError(assertErr)
 

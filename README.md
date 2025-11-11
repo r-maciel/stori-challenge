@@ -25,7 +25,7 @@ Se encarga de migrar transacciones desde archivos CSV hacia una base de datos Po
 3. Inserta los registros válidos en una transacción atómica (rollback ante cualquier error).
 4. Devuelve un resumen del resultado.
 
-## Mejoras futuras
+## Mejoras futuras con más tiempo
 
 El endpoint actual de `/v1/migrate` no utiliza goroutines ni worker pools, 
 ya que está pensado para ejecutarse dentro de una AWS Lambda. 
@@ -70,6 +70,11 @@ Procesar migraciones grandes de manera asíncrona, delegando el procesamiento pe
 - **CI/CD e Infraestructura:**  
   Implementar un workflow de GitHub Actions para despliegue automático en AWS (con Infrastructure as Code, IaC).  
   Esto permitirá tener pipelines reproducibles, control de versiones de infraestructura y despliegues automatizados a distintos entornos.
+
+- **Optimización de usuarios**  
+  Crear una tabla `users` para facilitar la búsqueda y filtrado por usuario y rango de tiempo.  
+  Esto permitiría optimizar consultas relacionales entre usuarios y transacciones, especialmente en escenarios de alto volumen.  
+  Sin embargo, dado que el reto menciona exclusivamente la migración de registros de transacciones, se asumió que la tabla `users` ya existe en el sistema.
 
 ## Cosas extra implementadas
 

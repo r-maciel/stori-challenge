@@ -115,6 +115,7 @@ func (s *csvMigrationService) readAndValidate(r io.Reader) ([]domain.Transaction
 			UserID:   userID,
 			Amount:   amt,
 			DateTime: dt.UTC(),
+			Type:     domain.DetermineTransactionType(amt),
 		})
 	}
 	return validTxs, rows, errs, nil

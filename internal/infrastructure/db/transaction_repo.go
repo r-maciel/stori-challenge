@@ -83,15 +83,15 @@ func insertBatch(ctx context.Context, tx *sql.Tx, txs []domain.Transaction) erro
 		sb   strings.Builder
 		args []any
 	)
-	sb.WriteString("INSERT INTO transactions (id, user_id, amount, datetime) VALUES ")
+	sb.WriteString("INSERT INTO transactions (id, user_id, amount, datetime, type) VALUES ")
 	for i, t := range txs {
 		if i > 0 {
 			sb.WriteString(",")
 		}
-		// 4 placeholders per row
-		base := i*4 + 1
-		sb.WriteString(fmt.Sprintf("($%d,$%d,$%d,$%d)", base, base+1, base+2, base+3))
-		args = append(args, t.ID, t.UserID, t.Amount.StringFixed(2), t.DateTime.UTC())
+		// 5 placeholders per row
+		base := i*5 + 1
+		sb.WriteString(fmt.Sprintf("($%d,$%d,$%d,$%d,$%d)", base, base+1, base+2, base+3, base+4))
+		args = append(args, t.ID, t.UserID, t.Amount.StringFixed(2), t.DateTime.UTC(), string(t.Type))
 	}
 	// Ensure timestamptz type correct by casting if needed
 	stmt := sb.String()

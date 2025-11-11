@@ -33,8 +33,8 @@ func TestIntegration_BulkInsert_And_ExistsByIDs(t *testing.T) {
 
 	// insert
 	txs := []domain.Transaction{
-		{ID: 1001, UserID: 10, Amount: decimal.NewFromFloat(1.23), DateTime: time.Unix(0, 0).UTC()},
-		{ID: 1002, UserID: 20, Amount: decimal.NewFromFloat(4.56), DateTime: time.Unix(10, 0).UTC()},
+		{ID: 1001, UserID: 10, Amount: decimal.NewFromFloat(1.23), DateTime: time.Unix(0, 0).UTC(), Type: domain.TransactionTypeCredit},
+		{ID: 1002, UserID: 20, Amount: decimal.NewFromFloat(4.56), DateTime: time.Unix(10, 0).UTC(), Type: domain.TransactionTypeCredit},
 	}
 	if err := repo.BulkInsert(ctx, txs); err != nil {
 		t.Fatalf("bulkinsert: %v", err)
@@ -60,8 +60,8 @@ func TestIntegration_BulkInsert_Duplicate_FailsAndRollsBack(t *testing.T) {
 	ctx := context.Background()
 
 	txs := []domain.Transaction{
-		{ID: 2001, UserID: 10, Amount: decimal.NewFromFloat(1), DateTime: time.Unix(0, 0).UTC()},
-		{ID: 2001, UserID: 11, Amount: decimal.NewFromFloat(2), DateTime: time.Unix(10, 0).UTC()}, // duplicate id
+		{ID: 2001, UserID: 10, Amount: decimal.NewFromFloat(1), DateTime: time.Unix(0, 0).UTC(), Type: domain.TransactionTypeCredit},
+		{ID: 2001, UserID: 11, Amount: decimal.NewFromFloat(2), DateTime: time.Unix(10, 0).UTC(), Type: domain.TransactionTypeCredit}, // duplicate id
 	}
 	if err := repo.BulkInsert(ctx, txs); err == nil {
 		t.Fatalf("expected duplicate to fail")
@@ -97,6 +97,7 @@ func TestIntegration_BulkInsert_BatchOver500_Succeeds(t *testing.T) {
 			UserID:   999,
 			Amount:   decimal.NewFromFloat(1.11),
 			DateTime: time.Unix(int64(i), 0).UTC(),
+			Type:     domain.TransactionTypeCredit,
 		})
 	}
 	if err := repo.BulkInsert(ctx, txs); err != nil {
