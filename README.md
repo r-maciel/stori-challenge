@@ -98,7 +98,7 @@ Procesar migraciones grandes de manera asíncrona, delegando el procesamiento pe
   Esto permitiría optimizar consultas relacionales entre usuarios y transacciones, especialmente en escenarios de alto volumen.  
   Sin embargo, dado que el reto menciona exclusivamente la migración de registros de transacciones, se asumió que la tabla `users` ya existe en el sistema.
 
-## Cosas extra implementadas
+## Extras implementados
 
 Además de la funcionalidad principal, se realizaron varias mejoras técnicas adicionales:
 
