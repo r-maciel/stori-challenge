@@ -10,6 +10,7 @@
    - `http://localhost:8080/healthz`
    - `http://localhost:8080/v1/docs`
    - `POST http://localhost:8080/v1/migrate`
+   - `GET http://localhost:8080/v1/users/{user_id}/balance?from=YYYY-MM-DDThh:mm:ssZ&to=YYYY-MM-DDThh:mm:ssZ`
 
 Se recominda usar `http://localhost:8080/v1/docs` para realizar las pruebas desde la implementación con swagger
 

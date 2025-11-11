@@ -25,6 +25,28 @@ Se encarga de migrar transacciones desde archivos CSV hacia una base de datos Po
 3. Inserta los registros válidos en una transacción atómica (rollback ante cualquier error).
 4. Devuelve un resumen del resultado.
 
+### `GET /v1/users/{user_id}/balance`
+
+Devuelve el balance de un usuario y los totales de débitos y créditos dentro de un rango de tiempo opcional.
+
+- Parámetros:
+  - `user_id` (path): ID del usuario.
+  - `from` (query, opcional): Fecha/hora inferior en formato RFC3339 con `Z`.
+  - `to` (query, opcional): Fecha/hora superior en formato RFC3339 con `Z`.
+    - Si solo viene uno de los dos, ese se usa como límite inferior y el superior es “ahora (UTC)”.
+    - Si vienen ambos, se ordenan automáticamente; el mayor es el límite superior.
+    - El límite superior no puede ser mayor que “ahora (UTC)”.
+- Respuesta 200:
+```json
+{
+  "balance": 25.21,
+  "total_debits": 10,
+  "total_credits": 15
+}
+```
+- Respuesta 404: si el `user_id` no tiene ninguna transacción registrada.
+- Respuesta 400: si `from` o `to` no cumplen el formato.
+
 ## Mejoras futuras con más tiempo
 
 El endpoint actual de `/v1/migrate` no utiliza goroutines ni worker pools, 
