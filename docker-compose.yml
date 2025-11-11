@@ -18,6 +18,23 @@ services:
       timeout: 3s
       retries: 10
 
+  db_test:
+    image: postgres:16-alpine
+    container_name: stori_db_test
+    environment:
+      - POSTGRES_USER=stori
+      - POSTGRES_PASSWORD=stori
+      - POSTGRES_DB=stori_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata_test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stori -d stori_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
   app:
     build: .
     container_name: stori_app
@@ -38,5 +55,6 @@ volumes:
   pgdata:
   go-mod:
   go-build:
+  pgdata_test:
 
 
