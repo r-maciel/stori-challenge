@@ -1,5 +1,7 @@
 package main
 
+// Stori Challenge API - local entrypoint
+
 import (
 	"log"
 	"os"

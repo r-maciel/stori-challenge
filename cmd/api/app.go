@@ -1,25 +1,50 @@
 package api
 
 import (
+	"database/sql"
+	"log"
 	"net/http"
+
+	csvmigration "stori-challenge/internal/application/csvmigration"
+	infradb "stori-challenge/internal/infrastructure/db"
+	"stori-challenge/internal/infrastructure/http/handlers"
+	oas "stori-challenge/internal/infrastructure/http/openapi"
 
 	"github.com/gin-gonic/gin"
 )
 
 // NewServer assembles and returns the HTTP server engine.
 func NewServer() *gin.Engine {
-	router := gin.New()
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	sqlDB, err := infradb.Open()
+	if err != nil {
+		log.Printf("database not available at startup: %v", err)
+	}
+	return NewServerWithDB(sqlDB)
+}
+
+// NewServerWithDB assembles the HTTP server engine using the provided DB connection.
+func NewServerWithDB(sqlDB *sql.DB) *gin.Engine {
+	router := gin.Default()
+
+	// API versioning
+	v1 := router.Group("/v1")
 
 	// Health check
 	router.GET("/healthz", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{
-			"status": "oka",
+			"status": "ok",
 		})
 	})
 
+	// Infra wiring
+	transactionRepo := infradb.NewTransactionRepo(sqlDB)
+	migrationService := csvmigration.NewCsvMigrationService(transactionRepo)
+	migrateHandler := handlers.NewMigrateHandler(migrationService)
+	// Routes (v1)
+	v1.POST("/migrate", migrateHandler.PostMigrate)
+
+	// OpenAPI (3.1) documentation endpoints
+	oas.RegisterOpenAPIRoutes(v1)
+
 	return router
 }
-
-
