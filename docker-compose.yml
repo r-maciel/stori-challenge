@@ -17,6 +17,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+ 
+  migrations:
+    build: .
+    container_name: stori_migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/stori?sslmode=disable
+      - DBMATE_MIGRATIONS_DIR=/app/db/migrations
+    volumes:
+      - .:/app:ro
+    command: ["sh", "-c", "dbmate --no-dump-schema up"]
+    restart: "no"
 
   db_test:
     image: postgres:16-alpine
@@ -43,6 +57,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     ports:
       - "8080:8080"
     volumes:
