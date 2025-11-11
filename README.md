@@ -7,7 +7,7 @@ Consulta la instalación y ejecución en [docs/installation.md](docs/installatio
 
 ## Sobre el proyecto
 
-La API contiene los siguientes endpoints principales:
+La documentación con OpeAPI y Swagger se encuentra en `/v1/docs` se puede acceder desde `http://localhost:8080/v1/docs` una vez este corriendo la app. La API contiene los siguientes endpoints principales:
 
 ### `POST /v1/migrate`
 
