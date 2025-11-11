@@ -1,0 +1,112 @@
+openapi: 3.1.0
+info:
+  title: Stori Challenge API
+  version: "1.0.0"
+  description: "API for CSV migration and processing. Base URL prefix: /v1"
+servers:
+  - url: /v1
+paths:
+  /migrate:
+    post:
+      summary: Migrate transactions via CSV upload
+      description: "Accepts a CSV file with columns id,user_id,amount,datetime and migrates transactions. Endpoint: POST /v1/migrate"
+      tags:
+        - migrate
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              examples:
+                success:
+                  value:
+                    inserted: 120
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCsv:
+                  value:
+                    code: invalid_csv
+                    message: CSV validation failed
+                    errors:
+                      - row: 3
+                        field: amount
+                        value: "abc"
+                        message: must be a number
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                conflict:
+                  value:
+                    code: conflict
+                    message: Conflicting transactions
+                    errors:
+                      - row: 15
+                        field: id
+                        value: "tx-123"
+                        message: duplicate transaction id
+components:
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        inserted:
+          type: integer
+          description: Number of inserted transactions
+      required:
+        - inserted
+    ErrorItem:
+      type: object
+      properties:
+        row:
+          type: integer
+        field:
+          type: string
+        value:
+          type: string
+        message:
+          type: string
+      required:
+        - field
+        - message
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Stable application error code
+        message:
+          type: string
+          description: Human-readable error message
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorItem'
+      required:
+        - code
+        - message
+        - errors
+
+
